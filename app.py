@@ -10,8 +10,28 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///user.db'
 db = SQLAlchemy(app)
 
 # Database Model
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    firstname = db.Column(db.String(20), nullable=False)
+    lastname = db.Column(db.String(20), nullable=False)
+    password = db.Column(db.String(500), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    company = db.Column(db.String(120), nullable=False)
+    role = db.Column(db.String(120), nullable=False)
+    country = db.Column(db.String(120), nullable=False)
+    joined = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
 class Waitlist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    waitlist_name = db.Column(db.String(20), unique=True, nullable=False)
+    user = db.ForeignKey('User', related_name='creator', on_delete=db.CASCADE)
+    company = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+class WaitlistUsr(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    waitlist = db.ForeignKey('Waitlist', related_name='waitlist', on_delete=db.CASCADE)
     firstname = db.Column(db.String(20), unique=True, nullable=False)
     lastname = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -23,6 +43,7 @@ waitlist = {
             "firstname":"Jamin",
             "lastname":"Onuegbu",
             "email":"jtechlab2007@gmail.com",
+            "message":"test test",
         }
 }
 
@@ -43,7 +64,7 @@ def add_email():
     firstname = data["firstname"]
     lastname = data["lastname"]
 
-    waitlist = Waitlist(firstname=firstname, lastname=lastname, email=email)
+    waitlist = WaitlistUsr(firstname=firstname, lastname=lastname, email=email)
     db.session.add(waitlist)
     db.session.commit()
     # keys = []
@@ -62,7 +83,7 @@ def add_email():
 
 @app.route("/list")
 def list():
-    waitlist = Waitlist.query.all()
+    waitlist = WaitlistUsr.query.all()
     list = []
     lists = {}
     for i in waitlist:
