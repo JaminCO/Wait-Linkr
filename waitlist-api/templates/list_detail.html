@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Waiter Details From Wait-List</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+  </head>
+  <body>
+    <header>
+    </header>
+    <main>
+      <h1>Messages</h1>
+      <div class="messages-container">
+        <div class="message">
+          <div class="message-header">
+            <strong>{{ waiter.id }}</strong>
+            <!-- <h2>{{ waiter.name }}</h2> -->
+            <span>{{ waiter.date }}</span>
+          </div>
+          <div class="message-body">
+            <p><strong>Email:</strong> {{ waiter.email }}</p>
+            <!-- <p>{{ waiter.message }}</p> -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
