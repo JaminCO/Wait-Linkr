@@ -26,21 +26,21 @@ fetch(url, {
   mode:"no-cors"
 })
 .then(response => {
-  console.log(response)
-  if (response.ok) {
-    console.log("Email added");
-    alert("SUCCESS")
-  } else {
-    if (!response.ok) {
-    console.log("Email not added");
-    alert("testr")
-    } 
-   }
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.json();
 })
-.catch(error=>{
-  console.error(error)
-  alert('Oops, something went wrong. Try again later.');
+.then(data => {
+  console.log('API response:', data);
+})
+.catch(error => {
+  console.error('API error:', error);
 });
+
+
+alert('Form submitted successfully!');
+form.reset();
 });
 // Email validation function
 function validateEmail(email) {

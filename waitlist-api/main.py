@@ -1,11 +1,28 @@
 from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import datetime
+from flask_mail import Mail, Message
+from dotenv import load_dotenv
 
+
+load_dotenv()
+
+mail = Mail()
 app = Flask(__name__)
+
 app.config['SECRET_KEY'] = 'UHURIY7I7IY2C4T.feyafinnryeniyw/rww'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///waitlinkr.db'
+app.config["MAIL_SERVER"] = 'smtp.gmail.com'
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USERNAME"] = "pythonacademia101@gmail.com"
+# os.getenv("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = "tdiguebkazleafjt"
+# os.getenv("MAIL_PASSWORD")
+SQLALCHEMY_TRACK_MODIFICATIONS=True
+
 db = SQLAlchemy(app)
+mail.init_app(app)
 
 app.app_context().push()
 
@@ -59,6 +76,33 @@ def add():
             db.session.add(new_waiter)
             db.session.commit()
             # print("1")
+            confirmation(email)
+            return jsonify({"msg":f"{email} added to waitlist"})
+        elif ds is True:
+                # print("2")
+                return jsonify({"msg":f"{email} already exists"})
+    return jsonify({"msg":f"Method must be POST"})
+
+
+# add waiter using json
+@app.route('/json/add', methods=['POST'])
+def add_json():
+    if request.method == 'POST':
+        data = request.get_json()
+        email = data['email']
+        # message = data['message']
+        # -----------------------------
+        # email = request.form['email']
+        # print(email)
+        # message = request.form['message']
+        ds = check_waiter_exists(email)
+        # print(ds)
+        if ds is False:
+            new_waiter = Waiter(email=email)
+            db.session.add(new_waiter)
+            db.session.commit()
+            # print("1")
+            confirmation(email)
             return jsonify({"msg":f"{email} added to waitlist"})
         elif ds is True:
                 # print("2")
@@ -78,7 +122,7 @@ def list():
     w_list = []
     for i in list:
         w_list.append(i.email)
-    return jsonify({"waiters":w_list})
+    return jsonify({"count":len(w_list), "waiters":w_list,})
 
 @app.route('/<id>/usr', methods=['GET', 'POST'])
 def list_detail(id):
@@ -86,6 +130,13 @@ def list_detail(id):
     return render_template('list_detail.html', waiter=waiter)
 
 # launch
+@app.route("/confirmation/<email>")
+def confirmation(email):
+    msg = Message('Waitlist Confirmation', sender=('PYTHON'), recipients=[email])
+    msg.html = render_template('waitlist_confirmation.html', email=email)
+    mail.send(msg)
+    return 'Waitlist confirmation sent to ' + email
+
 
 # report
 
