@@ -19,6 +19,7 @@ app.config["MAIL_USERNAME"] = "pythonacademia101@gmail.com"
 # os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = "tdiguebkazleafjt"
 # os.getenv("MAIL_PASSWORD")
+app.config['MAIL_DEFAULT_SENDER'] = ('Wait-Linkr', 'pythonacademia101@gmail.com')
 SQLALCHEMY_TRACK_MODIFICATIONS=True
 
 db = SQLAlchemy(app)
@@ -129,16 +130,42 @@ def list_detail(id):
     waiter = Waiter.query.get(id)
     return render_template('list_detail.html', waiter=waiter)
 
-# launch
+# confirmation email
 @app.route("/confirmation/<email>")
 def confirmation(email):
-    msg = Message('Waitlist Confirmation', sender=('PYTHON'), recipients=[email])
+    msg = Message('Waitlist Confirmation', sender=('pythonacademia101@gmnail.com', "Python"), recipients=[email])
     msg.html = render_template('waitlist_confirmation.html', email=email)
     mail.send(msg)
     return 'Waitlist confirmation sent to ' + email
 
+# launch
+@app.get("/launch")
+def launch():
+    return "Send Launch Email"
 
 # report
+@app.route("/report", methods=['GET', 'POST'])
+def progress_report():
+    if request.method == 'POST':
+        emails = ["homacn2@gmail.com"]
+        waiters = Waiter.query.all()
+        for i in waiters:
+            emails.append(i.email)
+        print(emails)
+        recipients = emails
+        # request.form.get('recipients').split(',')
+        subject = request.form.get('subject')
+        body = request.form.get('body')
+        html = request.form.get('html')
+        for i in emails:
+            msg = Message(subject=subject, recipients=[i])
+            msg.body = body
+            msg.html = html
+            mail.send(msg)        
+        return 'Email sent!'
+    return render_template('send_email.html')
+
+
 
 # welcome
 
