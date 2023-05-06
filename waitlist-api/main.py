@@ -147,7 +147,7 @@ def launch():
 @app.route("/report", methods=['GET', 'POST'])
 def progress_report():
     if request.method == 'POST':
-        emails = ["homacn2@gmail.com"]
+        emails = []
         waiters = Waiter.query.all()
         for i in waiters:
             emails.append(i.email)
