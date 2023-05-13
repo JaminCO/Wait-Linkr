@@ -11,7 +11,7 @@ mail = Mail()
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'UHURIY7I7IY2C4T.feyafinnryeniyw/rww'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///waitlinkr.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:yna63encU4Gvd9458tor@containers-us-west-23.railway.app:6759/railway'
 app.config["MAIL_SERVER"] = 'smtp.gmail.com'
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
