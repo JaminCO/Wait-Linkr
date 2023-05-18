@@ -33,7 +33,9 @@ class Waiter(db.Model):
     email = db.Column(db.String(50), unique=True, nullable=False)
     # token = db.Column(db.String(50), unique=True)
     date = db.Column(db.DateTime, default=datetime.datetime.utcnow())
-
+    
+db.create_all()
+    
 # home/dashboard
 @app.route('/')
 def home():
@@ -173,4 +175,4 @@ def progress_report():
 # run server
 if __name__ == '__main__':
     db.create_all()
-    app.run(debug=True)
+    app.run()
