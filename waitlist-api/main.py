@@ -1,8 +1,13 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+import os
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Length, Email, EqualTo
+from flask_bcrypt import Bcrypt
 
 
 load_dotenv()
@@ -10,16 +15,13 @@ load_dotenv()
 mail = Mail()
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'UHURIY7I7IY2C4T.feyafinnryeniyw/rww'
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///test.db"
-# 'postgresql://postgres:yna63encU4Gvd9458tor@containers-us-west-23.railway.app:6759/railway'
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("SQLALCHEMY_DATABASE_URI")
 app.config["MAIL_SERVER"] = 'smtp.gmail.com'
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = "pythonacademia101@gmail.com"
-# os.getenv("MAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = "tdiguebkazleafjt"
-# os.getenv("MAIL_PASSWORD")
+app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
 app.config['MAIL_DEFAULT_SENDER'] = ('Wait-Linkr', 'pythonacademia101@gmail.com')
 SQLALCHEMY_TRACK_MODIFICATIONS=True
 
@@ -27,15 +29,58 @@ db = SQLAlchemy(app)
 mail.init_app(app)
 
 app.app_context().push()
+bcrypt = Bcrypt(app)
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(60), nullable=False)
+
+class SignupForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=50)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=30)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Sign Up')
+
+class SigninForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Sign In')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    form = SignupForm()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        user = User(name=form.name.data, email=form.email.data, password=hashed_password)
+        db.session.add(user)
+        db.session.commit()
+        flash('Account created successfully!', 'success')
+        return redirect(url_for('signin'))
+    return render_template('signup.html', form=form)
+
+@app.route('/signin', methods=['GET', 'POST'])
+def signin():
+    form = SigninForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            flash('You have been logged in!', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Login unsuccessful. Please check your email and password.', 'danger')
+    return render_template('signin.html', form=form)
+
 
 class Waiter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(50), unique=True, nullable=False)
     # token = db.Column(db.String(50), unique=True)
     date = db.Column(db.DateTime, default=datetime.datetime.utcnow())
-    
-db.create_all()
-    
+
 # home/dashboard
 @app.route('/')
 def home():
@@ -136,7 +181,7 @@ def list_detail(id):
 # confirmation email
 @app.route("/confirmation/<email>")
 def confirmation(email):
-    msg = Message('Waitlist Confirmation', sender=('pythonacademia101@gmnail.com', "Python"), recipients=[email])
+    msg = Message('Waitlist Confirmation', recipients=[email])
     msg.html = render_template('waitlist_confirmation.html', email=email)
     mail.send(msg)
     return 'Waitlist confirmation sent to ' + email
@@ -175,4 +220,15 @@ def progress_report():
 # run server
 if __name__ == '__main__':
     db.create_all()
-    app.run()
+    app.run(debug=True)
+
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,6 @@
 // Select the form element
 const form = document.querySelector('form');
-const url = 'https://wait-linkr-api.onrender.com/add';
+const url = 'http://127.0.0.1:5000/add';
 // Add an event listener for form submission
 form.addEventListener('submit', (e) => {
   // Prevent the form from submitting
@@ -14,7 +14,6 @@ form.addEventListener('submit', (e) => {
     alert('Please enter a valid email address');
     return;
   }
-console.log(email)
 
 
 const formData = new FormData();
@@ -29,13 +28,13 @@ fetch(url, {
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
-  return response.json();
+  // return response.json();
 })
 .then(data => {
-  console.log('API response:', data);
+  // console.log('API response:', data);
 })
 .catch(error => {
-  console.error('API error:', error);
+  // console.error('API error:', error);
 });
 
 
