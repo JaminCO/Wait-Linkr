@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>Welcome {{ current_user.name }} to the Dashboard</h1>
+    <nav class="dashboard-nav">
+        <ul>
+        <li><a href="{{ url_for('progress_report') }}">Send Email</a></li>
+        <li><a href="{{ url_for('list') }}">List</a></li>
+        <li><a href="{{ url_for('launch') }}">Launch</a></li>
+        <!-- Add more links here -->
+        </ul>
+    </nav>
+    <div class="dashboard-content">
+        <!-- Dashboard content goes here -->
+    </div>
+    </div>
+{% endblock content %}

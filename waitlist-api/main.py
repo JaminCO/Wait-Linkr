@@ -1,11 +1,19 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
+from flask_login import (
+    UserMixin,
+    login_user,
+    LoginManager,
+    current_user,
+    logout_user,
+    login_required
+)
 import os
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
 from flask_bcrypt import Bcrypt
 
@@ -22,22 +30,41 @@ app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
 app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
-app.config['MAIL_DEFAULT_SENDER'] = ('Wait-Linkr', 'pythonacademia101@gmail.com')
+# app.config['MAIL_DEFAULT_SENDER'] = ('Wait-Linkr', 'pythonacademia101@gmail.com')
 SQLALCHEMY_TRACK_MODIFICATIONS=True
 
-db = SQLAlchemy(app)
 mail.init_app(app)
 
 app.app_context().push()
 bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 
-class User(db.Model):
+# LOGIN INFORMATION
+login_manager = LoginManager(app)
+login_manager.session_protection = "strong"
+login_manager.login_view = 'signin'
+login_manager.login_message_category = 'info'
+# login_manager.login_message = "Login Succesfull"
+
+class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+class Waiter(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(50), unique=True, nullable=False)
+    # token = db.Column(db.String(50), unique=True)
+    date = db.Column(db.DateTime, default=datetime.datetime.utcnow())
+
+
+# Auth form
 class SignupForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=50)])
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -48,7 +75,18 @@ class SignupForm(FlaskForm):
 class SigninForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
+    remember = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
+
+# home
+@app.route('/')
+def home():
+    return render_template('dashboard.html')
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -66,25 +104,34 @@ def signup():
 def signin():
     form = SigninForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
-            flash('You have been logged in!', 'success')
-            return redirect(url_for('home'))
+        # Check login credentials - Replace with your own logic
+        email = form.email.data
+        password = form.password.data
+        
+        # Replace with your own logic to validate the user credentials
+        if email == 'jtechlab2007@gmail.com' and password == 'password':
+            user = User.query.get(1)  # Create a User instance with the user id
+            login_user(user)  # Login the user
+            flash('Logged in successfully!', 'success')
+            return redirect(url_for('dashboard'))
         else:
-            flash('Login unsuccessful. Please check your email and password.', 'danger')
+            flash('Invalid username or password!', 'error')
+    # if form.validate_on_submit():
+    #     user = User.query.filter_by(email=form.email.data).first()
+    #     if user and bcrypt.check_password_hash(user.password, form.password.data):
+    #         flash('You have been logged in!', 'success')
+    #         login_user(user)
+    #         return redirect(url_for('home'))
+    #     else:
+    #         flash('Login unsuccessful. Please check your email and password.', 'danger')
     return render_template('signin.html', form=form)
 
-
-class Waiter(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(50), unique=True, nullable=False)
-    # token = db.Column(db.String(50), unique=True)
-    date = db.Column(db.DateTime, default=datetime.datetime.utcnow())
-
-# home/dashboard
-@app.route('/')
-def home():
-    return "THERE IS NOTHING TO SEE HERE, KEEP GOING"
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash("Logged Out", 'info')
+    return redirect(url_for('home'))
 
 # check if waiter already exists
 def check_waiter_exists(email):
@@ -161,11 +208,14 @@ def add_json():
 
 # list out waiters, including individually
 @app.route('/h/list')
+@login_required
 def list_html():
     list = Waiter.query.order_by(Waiter.date.desc()).all()
     return render_template('list.html', list=list)
 
+
 @app.route('/list')
+@login_required
 def list():
     list = Waiter.query.order_by(Waiter.date.desc()).all()
     w_list = []
@@ -173,6 +223,7 @@ def list():
         w_list.append(i.email)
     return jsonify({"count":len(w_list), "waiters":w_list,})
 
+@login_required
 @app.route('/<id>/usr', methods=['GET', 'POST'])
 def list_detail(id):
     waiter = Waiter.query.get(id)
@@ -181,18 +232,20 @@ def list_detail(id):
 # confirmation email
 @app.route("/confirmation/<email>")
 def confirmation(email):
-    msg = Message('Waitlist Confirmation', recipients=[email])
+    msg = Message('Waitlist Confirmation', sender = (current_user.name, 'pythonacademia101@gmail.com'), recipients=[email])
     msg.html = render_template('waitlist_confirmation.html', email=email)
     mail.send(msg)
     return 'Waitlist confirmation sent to ' + email
 
 # launch
 @app.get("/launch")
+@login_required
 def launch():
     return "Send Launch Email"
 
 # report
 @app.route("/report", methods=['GET', 'POST'])
+@login_required
 def progress_report():
     if request.method == 'POST':
         emails = []
@@ -221,14 +274,3 @@ def progress_report():
 if __name__ == '__main__':
     db.create_all()
     app.run(debug=True)
-
-
-
-
-
-
-
-
-
-
-
