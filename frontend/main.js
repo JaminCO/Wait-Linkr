@@ -1,6 +1,6 @@
 // Select the form element
 const form = document.querySelector('form');
-const url = 'http://127.0.0.1:5000/add';
+const url = 'http://127.0.0.1:8080/api/add';
 // Add an event listener for form submission
 form.addEventListener('submit', (e) => {
   // Prevent the form from submitting
@@ -18,6 +18,7 @@ form.addEventListener('submit', (e) => {
 
 const formData = new FormData();
 formData.append('email', email);
+formData.append('name', "Jamin");
 
 fetch(url, {
   method : 'POST',
@@ -50,4 +51,4 @@ function validateEmail(email) {
 // Get the current year and update the footer text
 const currentYear = new Date().getFullYear();
 const footerText = document.querySelector('footer p');
-footerText.innerHTML = `&copy; ${currentYear} My Startup. All rights reserved.`;
+footerText.innerHTML = `&copy; ${currentYear} WaitLinkr All rights reserved.`;
