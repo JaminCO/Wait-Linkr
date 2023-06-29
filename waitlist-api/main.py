@@ -63,6 +63,7 @@ class Waiter(db.Model):
     # token = db.Column(db.String(50), unique=True)
     date = db.Column(db.DateTime, default=datetime.datetime.utcnow())
 
+db.create_all()
 
 # Auth form
 class SignupForm(FlaskForm):
