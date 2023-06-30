@@ -1,6 +1,6 @@
 // Select the form element
 const form = document.querySelector('form');
-const url = 'https://wait-linkr-api.onrender.com/api/add';
+const url = 'https://wait-linkr-api.onrender.com/add';
 // Add an event listener for form submission
 form.addEventListener('submit', (e) => {
   // Prevent the form from submitting
