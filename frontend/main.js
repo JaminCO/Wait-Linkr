@@ -18,7 +18,7 @@ form.addEventListener('submit', (e) => {
 
 const formData = new FormData();
 formData.append('email', email);
-formData.append('name', "Jamin");
+formData.append('name', "usr1234");
 
 fetch(url, {
   method : 'POST',
